@@ -710,14 +710,59 @@ const VillageLedger = () => {
   //   }
   // };
   // 1. handleAddRow ko update karein
+// const handleAddRow = async (e) => {
+//   e.preventDefault();
+  
+//   const loan = Number(newRow.loanLent) || 0;
+//   const installment = Number(newRow.installment) || 0;
+  
+//   // Balance calculation: Loan - Installment
+//   const calculatedBalance = loan - installment;
+
+//   const rowPayload = {
+//     village_name: decodedVillageName, 
+//     timeline: `${selectedYear}-${selectedMonth}`,
+//     citizen_name: newRow.name, 
+//     group_name: newRow.groupName || "Individual Ledger",
+//     phone: newRow.phone || "N/A", 
+//     loan_lent: loan,
+//     principal: Number(newRow.principal) || 0, 
+//     interest_percent: Number(newRow.interestPercent) || 0, // Ab ye amount hai
+//     installment: installment,
+//     balance: calculatedBalance, // Auto-calculated
+//     created_at: newRow.date
+//   };
+
+//   const { error } = await supabase.from('ledger_entries').insert([rowPayload]);
+//   if (!error) {
+//     setNewRow({ 
+//       name: '', groupName: '', phone: '', loanLent: '', principal: '', 
+//       interestPercent: '', installment: '', date: new Date().toISOString().split('T')[0] 
+//     });
+//     fetchLedgerEntries();
+//   }
+// };
+
+
+
 const handleAddRow = async (e) => {
   e.preventDefault();
   
-  const loan = Number(newRow.loanLent) || 0;
+  // 1. Is customer ka sabse recent balance fetch karein
+  const { data: lastEntry } = await supabase
+    .from('ledger_entries')
+    .select('balance')
+    .eq('citizen_name', newRow.name) // Citizen name se check (Unique ID suggest ki thi)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  // 2. Agar koi purani entry mili, toh uska balance use karein, nahi toh naya loan lent
+  const previousBalance = lastEntry ? lastEntry.balance : Number(newRow.loanLent);
   const installment = Number(newRow.installment) || 0;
   
-  // Balance calculation: Loan - Installment
-  const calculatedBalance = loan - installment;
+  // 3. Naya Balance = Pichla Balance - Installment
+  const calculatedBalance = previousBalance - installment;
 
   const rowPayload = {
     village_name: decodedVillageName, 
@@ -725,15 +770,16 @@ const handleAddRow = async (e) => {
     citizen_name: newRow.name, 
     group_name: newRow.groupName || "Individual Ledger",
     phone: newRow.phone || "N/A", 
-    loan_lent: loan,
+    loan_lent: Number(newRow.loanLent) || 0,
     principal: Number(newRow.principal) || 0, 
-    interest_percent: Number(newRow.interestPercent) || 0, // Ab ye amount hai
+    interest_percent: Number(newRow.interestPercent) || 0,
     installment: installment,
-    balance: calculatedBalance, // Auto-calculated
+    balance: calculatedBalance, // Ab ye "Running Balance" hai
     created_at: newRow.date
   };
 
   const { error } = await supabase.from('ledger_entries').insert([rowPayload]);
+  
   if (!error) {
     setNewRow({ 
       name: '', groupName: '', phone: '', loanLent: '', principal: '', 
