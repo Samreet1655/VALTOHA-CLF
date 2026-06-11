@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, UserPlus, LayoutGrid, LogOut, ArrowRight, KeyRound, Eye, EyeOff, ShieldCheck, Trash2, Edit3, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { DEFAULT_USER } from './config';
+import { DEFAULT_USER } from '../config';
 
 const OFFICIAL_VALTOHA_VILLAGES = [
   "ABADI AMARKOT", "ABADI MALKA", "ADDA AMARKOT", "ADDA VALTOHA", "AMARKOT", 
