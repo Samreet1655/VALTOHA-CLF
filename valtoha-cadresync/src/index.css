@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+body {
+  background-color: #fcf9f2; /* Humara perfect off-white background */
+  font-family: system-ui, -apple-system, sans-serif;
+  margin: 0;
+}
