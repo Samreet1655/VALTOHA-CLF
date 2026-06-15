@@ -41,8 +41,13 @@
 
 
 
-import React, { lazy, Suspense } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import AdminDashboard from './pages/AdminDashboard';
+import VillageLedger from './pages/VillageLedger'; // 👈 1. Yeh import add karo
+import CadreDashboard from './pages/CadreDashboard';
 
 // 1. Sabhi components ko lazy import karein
 const LandingPage = lazy(() => import('./pages/LandingPage'));
