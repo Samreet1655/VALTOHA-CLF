@@ -118,10 +118,13 @@ const handleLoginSubmit = async (e) => {
           setIsLoading(false);
           return;
         }
+        console.log("DEBUG: Input ID:", cadreIdInput.trim());
+        console.log("DEBUG: DB Profile:", profile);
 
         // Debugging logs to pinpoint the issue
         console.log("DEBUG: Checking password for user:", profile.cadre_id);
-        const isPasswordValid = await bcrypt.compare(passwordInput, profile.password);
+        // const isPasswordValid = await bcrypt.compare(passwordInput, profile.password);
+        const isPasswordValid = await bcrypt.compare(passwordInput.trim(), profile.password);
         console.log("DEBUG: Password match result:", isPasswordValid);
 
         if (!isPasswordValid) {
