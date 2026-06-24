@@ -12,77 +12,171 @@ const LoginPage = () => {
   const [passwordInput, setPasswordInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // const handleLoginSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setIsLoading(true);
+
+  //   try {
+  //     if (role === 'admin') {
+  //       // Admin authentication using environment variables
+  //       const adminUsername = import.meta.env.VITE_ADMIN_USERNAME;
+  //       const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+
+  //       if (!adminUsername || !adminPassword) {
+  //         alert("❌ Admin credentials not configured. Contact administrator.");
+  //         setIsLoading(false);
+  //         return;
+  //       }
+
+  //       if (cadreIdInput.trim() === adminUsername && passwordInput === adminPassword) {
+  //         sessionStorage.setItem('active_role', 'admin');
+  //         sessionStorage.removeItem('active_cadre');
+  //         navigate('/admin');
+  //       } else {
+  //         alert("❌ Invalid Admin Credentials!");
+  //       }
+  //     } else {
+  //       // Cadre authentication from Supabase
+  //       const { data: profile, error } = await supabase
+  //         .from('profiles')
+  //         .select('*')
+  //         .eq('cadre_id', cadreIdInput.trim())
+  //         .eq('role', 'cadre')
+  //         .maybeSingle();
+
+  //       console.log('Supabase Response:', { profile, error }); // Debug: check query result and error
+
+  //       if (error) {
+  //         alert(`❌ Database Error: ${error.message}`);
+  //         setIsLoading(false);
+  //         return;
+  //       }
+
+  //       if (!profile) {
+  //         alert("❌ Cadre ID not found. Please check your ID.");
+  //         setIsLoading(false);
+  //         return;
+  //       }
+
+  //       // Secure password verification using bcrypt
+  //       const isPasswordValid = await bcrypt.compare(passwordInput, profile.password);
+
+  //       if (!isPasswordValid) {
+  //         alert("❌ Invalid Password.");
+  //         setIsLoading(false);
+  //         return;
+  //       }
+
+  //       const sessionPayload = {
+  //         cadreId: profile.cadre_id,
+  //         name: profile.name,
+  //         villages: profile.assigned_villages || []
+  //       };
+
+  //       sessionStorage.setItem('active_role', 'cadre');
+  //       sessionStorage.setItem('active_cadre', JSON.stringify(sessionPayload));
+  //       navigate('/cadre-dashboard');
+  //     }
+  //   } catch (err) {
+  //     alert("❌ Authentication Error: " + err.message);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+
+
   const handleLoginSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+  e.preventDefault();
+  setIsLoading(true);
 
-    try {
-      if (role === 'admin') {
-        // Admin authentication using environment variables
-        const adminUsername = import.meta.env.VITE_ADMIN_USERNAME;
-        const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+  try {
+    if (role === 'admin') {
+      // Admin authentication using environment variables
+      const adminUsername = import.meta.env.VITE_ADMIN_USERNAME;
+      const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
 
-        if (!adminUsername || !adminPassword) {
-          alert("❌ Admin credentials not configured. Contact administrator.");
-          setIsLoading(false);
-          return;
-        }
+      // --- DEBUG SECTION START ---
+      console.log("DEBUG: Env Username from Vercel:", adminUsername);
+      console.log("DEBUG: Input Username (trimmed):", cadreIdInput.trim());
+      console.log("DEBUG: Input Password:", passwordInput);
+      console.log("DEBUG: Env Password:", adminPassword);
+      // --- DEBUG SECTION END ---
 
-        if (cadreIdInput.trim() === adminUsername && passwordInput === adminPassword) {
-          sessionStorage.setItem('active_role', 'admin');
-          sessionStorage.removeItem('active_cadre');
-          navigate('/admin');
-        } else {
-          alert("❌ Invalid Admin Credentials!");
-        }
-      } else {
-        // Cadre authentication from Supabase
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('cadre_id', cadreIdInput.trim())
-          .eq('role', 'cadre')
-          .maybeSingle();
-
-        console.log('Supabase Response:', { profile, error }); // Debug: check query result and error
-
-        if (error) {
-          alert(`❌ Database Error: ${error.message}`);
-          setIsLoading(false);
-          return;
-        }
-
-        if (!profile) {
-          alert("❌ Cadre ID not found. Please check your ID.");
-          setIsLoading(false);
-          return;
-        }
-
-        // Secure password verification using bcrypt
-        const isPasswordValid = await bcrypt.compare(passwordInput, profile.password);
-
-        if (!isPasswordValid) {
-          alert("❌ Invalid Password.");
-          setIsLoading(false);
-          return;
-        }
-
-        const sessionPayload = {
-          cadreId: profile.cadre_id,
-          name: profile.name,
-          villages: profile.assigned_villages || []
-        };
-
-        sessionStorage.setItem('active_role', 'cadre');
-        sessionStorage.setItem('active_cadre', JSON.stringify(sessionPayload));
-        navigate('/cadre-dashboard');
+      if (!adminUsername || !adminPassword) {
+        alert("❌ Admin credentials not configured. Contact administrator.");
+        setIsLoading(false);
+        return;
       }
-    } catch (err) {
-      alert("❌ Authentication Error: " + err.message);
-    } finally {
-      setIsLoading(false);
+
+      if (cadreIdInput.trim() === adminUsername && passwordInput === adminPassword) {
+        sessionStorage.setItem('active_role', 'admin');
+        sessionStorage.removeItem('active_cadre');
+        navigate('/admin');
+      } else {
+        alert("❌ Invalid Admin Credentials!");
+      }
+    } else {
+      // Cadre authentication from Supabase
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('cadre_id', cadreIdInput.trim())
+        .eq('role', 'cadre')
+        .maybeSingle();
+
+      console.log('Supabase Response:', { profile, error }); 
+
+      if (error) {
+        alert(`❌ Database Error: ${error.message}`);
+        setIsLoading(false);
+        return;
+      }
+
+      if (!profile) {
+        alert("❌ Cadre ID not found. Please check your ID.");
+        setIsLoading(false);
+        return;
+      }
+
+      const isPasswordValid = await bcrypt.compare(passwordInput, profile.password);
+
+      if (!isPasswordValid) {
+        alert("❌ Invalid Password.");
+        setIsLoading(false);
+        return;
+      }
+
+      const sessionPayload = {
+        cadreId: profile.cadre_id,
+        name: profile.name,
+        villages: profile.assigned_villages || []
+      };
+
+      sessionStorage.setItem('active_role', 'cadre');
+      sessionStorage.setItem('active_cadre', JSON.stringify(sessionPayload));
+      navigate('/cadre-dashboard');
     }
-  };
+  } catch (err) {
+    alert("❌ Authentication Error: " + err.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   const handleRoleSelection = (selectedRole) => {
     setRole(selectedRole);
