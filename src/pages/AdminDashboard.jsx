@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Search, UserPlus, LayoutGrid, LogOut, ArrowRight, KeyRound, Eye, EyeOff, ShieldCheck, Trash2, Edit3, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { DEFAULT_USER } from '../config';
 
 const OFFICIAL_VALTOHA_VILLAGES = [
   "ABADI AMARKOT", "ABADI MALKA", "ADDA AMARKOT", "ADDA VALTOHA", "AMARKOT", 
@@ -44,12 +43,12 @@ const AdminDashboard = () => {
   const [adminProfile, setAdminProfile] = useState(() => {
     const saved = localStorage.getItem('admin_profile');
     const DEFAULT_USER = {
-    username: import.meta.env.VITE_USERNAME,
-    password: String(import.meta.env.VITE_PASSWORD),
-    recoveryPhone: import.meta.env.VITE_RECOVERY_PHONE
-  };
+      username: import.meta.env.VITE_ADMIN_USERNAME || "ADMIN",
+      password: import.meta.env.VITE_ADMIN_PASSWORD || "",
+      recoveryPhone: import.meta.env.VITE_ADMIN_RECOVERY_PHONE || ""
+    };
 
-  return saved ? JSON.parse(saved) : DEFAULT_USER;
+    return saved ? JSON.parse(saved) : DEFAULT_USER;
   });
 
   const [securityForm, setSecurityForm] = useState({ newUsername: '', newPassword: '' });

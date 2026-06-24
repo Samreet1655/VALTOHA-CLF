@@ -2,42 +2,69 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Users, ArrowLeft } from 'lucide-react';
-import { supabase } from '../supabaseClient'; 
+import bcrypt from 'bcryptjs';
+import { supabase } from '../supabaseClient';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const [role, setRole] = useState(null); 
-  // State name change kiya taaki ID ke liye clear rahe
-  const [cadreIdInput, setCadreIdInput] = useState(''); 
+  const [role, setRole] = useState(null);
+  const [cadreIdInput, setCadreIdInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
 
-    if (role === 'admin') {
-      if (cadreIdInput === 'PARMEET SINGH' && passwordInput === '8791') {
-        sessionStorage.setItem('active_role', 'admin');
-        sessionStorage.removeItem('active_cadre');
-        navigate('/admin');
+    try {
+      if (role === 'admin') {
+        // Admin authentication using environment variables
+        const adminUsername = import.meta.env.VITE_ADMIN_USERNAME;
+        const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+
+        if (!adminUsername || !adminPassword) {
+          alert("❌ Admin credentials not configured. Contact administrator.");
+          setIsLoading(false);
+          return;
+        }
+
+        if (cadreIdInput.trim() === adminUsername && passwordInput === adminPassword) {
+          sessionStorage.setItem('active_role', 'admin');
+          sessionStorage.removeItem('active_cadre');
+          navigate('/admin');
+        } else {
+          alert("❌ Invalid Admin Credentials!");
+        }
       } else {
-        alert("❌ Invalid Admin Credentials!");
-      }
-    } else {
-      try {
-        // ID-based query (Ensure your Supabase column is named 'cadre_id')
+        // Cadre authentication from Supabase
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('cadre_id', cadreIdInput.trim()) 
+          .eq('cadre_id', cadreIdInput.trim())
           .eq('role', 'cadre')
           .maybeSingle();
 
-        if (error) return alert(`❌ Database Error: ${error.message}`);
-        if (!profile) return alert("❌ Cadre ID not found. Please check your ID.");
+        console.log('Supabase Response:', { profile, error }); // Debug: check query result and error
 
-        // Password verification (Case sensitive)
-        if (String(profile.password).trim() !== passwordInput.trim()) {
-          return alert("❌ Invalid Password.");
+        if (error) {
+          alert(`❌ Database Error: ${error.message}`);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!profile) {
+          alert("❌ Cadre ID not found. Please check your ID.");
+          setIsLoading(false);
+          return;
+        }
+
+        // Secure password verification using bcrypt
+        const isPasswordValid = await bcrypt.compare(passwordInput, profile.password);
+
+        if (!isPasswordValid) {
+          alert("❌ Invalid Password.");
+          setIsLoading(false);
+          return;
         }
 
         const sessionPayload = {
@@ -48,12 +75,12 @@ const LoginPage = () => {
 
         sessionStorage.setItem('active_role', 'cadre');
         sessionStorage.setItem('active_cadre', JSON.stringify(sessionPayload));
-
-        navigate('/cadre-dashboard'); 
-
-      } catch (err) {
-        alert("Cloud Connection Fault: " + err.message);
+        navigate('/cadre-dashboard');
       }
+    } catch (err) {
+      alert("❌ Authentication Error: " + err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -62,66 +89,6 @@ const LoginPage = () => {
     setCadreIdInput('');
     setPasswordInput('');
   };
-
-
-// import React, { useState } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import { Shield, Users, ArrowLeft } from 'lucide-react';
-// import bcrypt from 'bcryptjs'; // Ensure you've run: npm install bcryptjs
-// import { supabase } from '../supabaseClient'; 
-
-// const LoginPage = () => {
-//   const navigate = useNavigate();
-//   const [role, setRole] = useState(null); 
-//   const [cadreIdInput, setCadreIdInput] = useState(''); 
-//   const [passwordInput, setPasswordInput] = useState('');
-
-//   const handleLoginSubmit = async (e) => {
-//     e.preventDefault();
-
-//     try {
-//       // Unified query: Fetches user based on role and ID
-//       const { data: profile, error } = await supabase
-//         .from('profiles')
-//         .select('*')
-//         .eq('cadre_id', cadreIdInput.trim())
-//         .eq('role', role)
-//         .maybeSingle();
-
-//       if (error) throw error;
-//       if (!profile) return alert("❌ Invalid Login ID or Role combination.");
-
-//       // Secure Password verification using bcrypt
-//       const isMatch = await bcrypt.compare(passwordInput.trim(), profile.password);
-      
-//       if (!isMatch) {
-//         return alert("❌ Invalid Password.");
-//       }
-
-//       // Set secure session
-//       sessionStorage.setItem('active_role', role);
-//       const sessionPayload = {
-//         cadreId: profile.cadre_id,
-//         name: profile.name,
-//         villages: profile.assigned_villages || []
-//       };
-//       sessionStorage.setItem('active_cadre', JSON.stringify(sessionPayload));
-
-//       // Dynamic redirection
-//       navigate(role === 'admin' ? '/admin' : '/cadre-dashboard');
-
-//     } catch (err) {
-//       alert("❌ Authentication Error: " + err.message);
-//     }
-//   };
-
-//   const handleRoleSelection = (selectedRole) => {
-//     setRole(selectedRole);
-//     setCadreIdInput('');
-//     setPasswordInput('');
-//   };
-
-  // ... rest of your JSX remains the same, ensure inputs use cadreIdInput/passwordInput ...
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-[#fcf9f2]">
@@ -157,28 +124,43 @@ const LoginPage = () => {
           <form onSubmit={handleLoginSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                {role === 'admin' ? 'Admin User ID' : 'Cadre ID'}
+                {role === 'admin' ? 'Admin Username' : 'Cadre ID'}
               </label>
               <input 
-                type="text" required placeholder={role === 'admin' ? "e.g. PARMEET SINGH" : "Enter Cadre ID"} 
+                type="text"
+                required
+                disabled={isLoading}
+                placeholder={role === 'admin' ? "Enter admin username" : "Enter Cadre ID"} 
                 value={cadreIdInput}
                 onChange={(e) => setCadreIdInput(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all text-sm font-semibold"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all text-sm font-semibold disabled:bg-slate-100"
               />
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Password</label>
               <input 
-                type="password" required placeholder="••••••••" 
+                type="password"
+                required
+                disabled={isLoading}
+                placeholder="••••••••" 
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all text-sm"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all text-sm disabled:bg-slate-100"
               />
             </div>
-            <button type="submit" className={`w-full py-3 text-white font-bold rounded-xl transition-all shadow-md mt-2 cursor-pointer ${role === 'admin' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
-              Secure Cloud Login
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full py-3 text-white font-bold rounded-xl transition-all shadow-md mt-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${role === 'admin' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+            >
+              {isLoading ? 'Authenticating...' : 'Secure Cloud Login'}
             </button>
-            <button type="button" onClick={() => setRole(null)} className="w-full text-center text-xs font-semibold text-slate-400 hover:text-slate-600 transition-colors pt-2 cursor-pointer">
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={() => setRole(null)}
+              className="w-full text-center text-xs font-semibold text-slate-400 hover:text-slate-600 transition-colors pt-2 cursor-pointer disabled:opacity-50"
+            >
               Go Back to Role Selection
             </button>
           </form>
