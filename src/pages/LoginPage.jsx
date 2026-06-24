@@ -127,24 +127,28 @@ const LoginPage = () => {
                 {role === 'admin' ? 'Admin Username' : 'Cadre ID'}
               </label>
               <input 
-                type="text"
+                type="text" 
+                id="username" 
+                name="username" 
                 required
                 disabled={isLoading}
                 placeholder={role === 'admin' ? "Enter admin username" : "Enter Cadre ID"} 
-                value={cadreIdInput}
-                onChange={(e) => setCadreIdInput(e.target.value)}
+                value={cadreIdInput} 
+                onChange={(e) => setCadreIdInput(e.target.value)} 
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all text-sm font-semibold disabled:bg-slate-100"
               />
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Password</label>
               <input 
-                type="password"
+                type="password" 
+                id="password" 
+                name="password" 
                 required
                 disabled={isLoading}
                 placeholder="••••••••" 
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
+                value={passwordInput} 
+                onChange={(e) => setPasswordInput(e.target.value)} 
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all text-sm disabled:bg-slate-100"
               />
             </div>
