@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, UserPlus, LayoutGrid, LogOut, ArrowRight, KeyRound, Eye, EyeOff, ShieldCheck, Trash2, Edit3, Check } from 'lucide-react';
+import { Search, UserPlus, LayoutGrid, LogOut, ArrowRight, KeyRound, Eye, EyeOff, Trash2, Edit3, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import bcrypt from 'bcryptjs';
 import { supabase } from '../supabaseClient';
@@ -58,6 +58,13 @@ const AdminDashboard = () => {
   const [userEnteredOtp, setUserEnteredOtp] = useState('');
 
   const [formData, setFormData] = useState({ name: '', husbandName: '', phone: '', village: '', password: '', cadreId: '' });
+
+  const isBcryptHash = (password) => typeof password === 'string' && /^\$2[aby]\$/.test(password);
+  const formatPasswordValue = (password, reveal) => {
+    if (!password) return '';
+    if (isBcryptHash(password)) return reveal ? 'ENCRYPTED' : '********';
+    return password;
+  };
 
   // 🌟 STEP 2 FIX: SUPABASE SE LIVE DATA FETCH KARNA (NO LOCAL STORAGE DEPENDENCY)
   const fetchCloudData = async () => {
@@ -135,13 +142,13 @@ setCredentialsVault(vaultData);
 
   const startEditing = (account) => {
     setEditingId(account.id);
-    setEditFormData({ phone: account.phone, password: account.password });
+    setEditFormData({ phone: account.phone, password: '' });
   };
 
   // 🌟 LIVE EDIT CLOUD SYNC WITH VALIDATIONS
   const handleSaveEdit = async (id, targetVillageName, cadreName) => {
-    if (!editFormData.phone || !editFormData.password) {
-      return alert("Fields cannot be left completely empty.");
+    if (!editFormData.phone.trim()) {
+      return alert("Phone cannot be left empty.");
     }
 
     // Client Safeguard: Phone validation check
@@ -150,15 +157,17 @@ setCredentialsVault(vaultData);
     }
 
     try {
-      // Hash the password before uploading
-      const hashedPassword = await bcrypt.hash(editFormData.password.trim(), 10);
-      
+      const updatePayload = {
+        phone: editFormData.phone.trim()
+      };
+
+      if (editFormData.password.trim()) {
+        updatePayload.password = await bcrypt.hash(editFormData.password.trim(), 10);
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({ 
-          password: hashedPassword,
-          phone: editFormData.phone.trim() // Database columns should match
-        })
+        .update(updatePayload)
         .eq('name', cadreName)
         .eq('role', 'cadre');
 
@@ -374,7 +383,6 @@ setCredentialsVault(vaultData);
             <button onClick={() => setActiveTab('villages')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${activeTab === 'villages' ? 'bg-amber-500 text-white' : 'text-slate-300 hover:bg-slate-800'}`}><LayoutGrid size={18} /> Village Directory</button>
             <button onClick={() => setActiveTab('generate-id')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${activeTab === 'generate-id' ? 'bg-amber-500 text-white' : 'text-slate-300 hover:bg-slate-800'}`}><UserPlus size={18} /> Generate Cadre ID</button>
             <button onClick={() => setActiveTab('passwords')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${activeTab === 'passwords' ? 'bg-amber-500 text-white' : 'text-slate-300 hover:bg-slate-800'}`}><KeyRound size={18} /> Credentials Vault</button>
-            <button onClick={() => setActiveTab('security')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${activeTab === 'security' ? 'bg-amber-500 text-white' : 'text-slate-300 hover:bg-slate-800'}`}><ShieldCheck size={18} /> Admin Security</button>
           </nav>
         </div>
         <button onClick={() => navigate('/')} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-950/30 rounded-xl transition-colors mt-6"><LogOut size={18} /> Sign Out</button>
@@ -575,34 +583,6 @@ setCredentialsVault(vaultData);
               </div>
             )}
 
-            {activeTab === 'security' && (
-              <div className="max-w-2xl mx-auto space-y-6">
-                <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-6 rounded-2xl shadow-md border border-slate-700 flex justify-between items-center">
-                  <div>
-                    <h2 className="text-xl font-black">System Profile Authentication</h2>
-                    <p className="text-xs text-slate-400 mt-0.5">Control operational credentials running active sessions</p>
-                  </div>
-                  <div className="bg-slate-800 p-3 rounded-xl font-mono text-xs">
-                    <p><span className="text-slate-500 font-sans font-bold">User:</span> {adminProfile.username}</p>
-                  </div>
-                </div>
-                <div className="bg-white border border-slate-100 p-6 md:p-8 rounded-2xl shadow-sm">
-                  <form onSubmit={triggerOtpRequest} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1 uppercase">New Username</label>
-                        <input type="text" required placeholder="e.g. PARMEET SINGH" value={securityForm.newUsername} onChange={(e) => setSecurityForm({...securityForm, newUsername: e.target.value})} className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold"/>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1 uppercase">New Password</label>
-                        <input type="text" required placeholder="e.g. 8791" value={securityForm.newPassword} onChange={(e) => setSecurityForm({...securityForm, newPassword: e.target.value})} className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-mono font-bold"/>
-                      </div>
-                    </div>
-                    <button type="submit" className="w-full py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl uppercase tracking-wider cursor-pointer">Request Secure Confirmation Code</button>
-                  </form>
-                </div>
-              </div>
-            )}
           </>
         )}
       </div>
