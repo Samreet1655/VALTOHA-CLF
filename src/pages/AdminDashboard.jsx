@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, UserPlus, LayoutGrid, LogOut, ArrowRight, KeyRound, Eye, EyeOff, ShieldCheck, Trash2, Edit3, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import bcrypt from 'bcryptjs';
 import { supabase } from '../supabaseClient';
 
 const OFFICIAL_VALTOHA_VILLAGES = [
@@ -149,10 +150,13 @@ setCredentialsVault(vaultData);
     }
 
     try {
+      // Hash the password before uploading
+      const hashedPassword = await bcrypt.hash(editFormData.password.trim(), 10);
+      
       const { error } = await supabase
         .from('profiles')
         .update({ 
-          password: editFormData.password.trim(),
+          password: hashedPassword,
           phone: editFormData.phone.trim() // Database columns should match
         })
         .eq('name', cadreName)
@@ -290,6 +294,9 @@ setCredentialsVault(vaultData);
     if (!formData.cadreId) return alert("Cadre ID is required!");
 
     try {
+      // Hash the password before uploading
+      const hashedPassword = await bcrypt.hash(formData.password.trim(), 10);
+      
       // 1. Pehle check karo kya ye cadre pehle se hai?
       const { data: existingProfile } = await supabase
         .from('profiles')
@@ -313,7 +320,7 @@ setCredentialsVault(vaultData);
         .from('profiles')
         .upsert({
           name: formData.name.trim(),
-          password: formData.password.trim(),
+          password: hashedPassword,
           phone: formData.phone.trim() || null,
           cadre_id: formData.cadreId.trim(),
           role: 'cadre',
