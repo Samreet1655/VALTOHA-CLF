@@ -78,18 +78,18 @@ const AdminDashboard = () => {
       if (error) throw error;
 
       // 1. Credentials Vault map karo direct database rows se
-      const vaultData = profiles.map((p, idx) => ({
-  id: p.id || idx + 1,
-  cadreId: p.cadre_id || `CAD-${100 + idx}`,
-  name: p.name,
-  phone: p.phone || "N/A",
-  password: p.password || "",
-  // Yahan join use karein taaki saare villages dikhein
-  village: (p.assigned_villages && p.assigned_villages.length > 0) 
+        const vaultData = profiles.map((p, idx) => ({
+      id: p.id || idx + 1,
+      cadreId: p.cadre_id || `CAD-${100 + idx}`,
+      name: p.name,
+      phone: p.phone || "N/A",
+      password: p.display_password || "",
+      // Yahan join use karein taaki saare villages dikhein
+      village: (p.assigned_villages && p.assigned_villages.length > 0) 
            ? p.assigned_villages.join(', ') 
            : "No Village Assigned"
-}));
-setCredentialsVault(vaultData);
+    }));
+    setCredentialsVault(vaultData);
 
       // 2. Villages Directory map karo live database information ke sath
       const mappedVillages = OFFICIAL_VALTOHA_VILLAGES.map((vName, index) => {
@@ -163,6 +163,7 @@ setCredentialsVault(vaultData);
 
       if (editFormData.password.trim()) {
         updatePayload.password = await bcrypt.hash(editFormData.password.trim(), 10);
+        updatePayload.display_password = editFormData.password.trim();
       }
 
       const { error } = await supabase
@@ -330,6 +331,7 @@ setCredentialsVault(vaultData);
         .upsert({
           name: formData.name.trim(),
           password: hashedPassword,
+          display_password: formData.password.trim(),
           phone: formData.phone.trim() || null,
           cadre_id: formData.cadreId.trim(),
           role: 'cadre',
