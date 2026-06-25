@@ -537,7 +537,12 @@ setCredentialsVault(vaultData);
                                   />
                                 ) : (
                                   <>
-                                    <input type={revealedPasswords[account.id] ? "text" : "password"} readOnly value={account.password} className="bg-transparent font-mono text-amber-600 w-24 text-sm focus:outline-none"/>
+                                    <input
+                                      type={revealedPasswords[account.id] ? "text" : "password"}
+                                      readOnly
+                                      value={formatPasswordValue(account.password, revealedPasswords[account.id])}
+                                      className="bg-transparent font-mono text-amber-600 w-24 text-sm focus:outline-none"
+                                    />
                                     <button onClick={() => togglePasswordVisibility(account.id)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
                                       {revealedPasswords[account.id] ? <EyeOff size={16} /> : <Eye size={16} />}
                                     </button>
